@@ -1870,6 +1870,58 @@ if "--cli" not in sys.argv and len(sys.argv) <= 1:
             **It's like a daily allowance that accumulates when you don't spend it all!**
             """
         )
+        
+        # Code-level clarification
+        with st.expander("🔍 Code-Level: How This Actually Works", expanded=False):
+            wallet_plus_limit = current_day.wallet_balance_start + daily_limit
+            st.markdown(
+                f"""
+                **There's NO explicit "add unused spend to wallet" code!** Instead:
+                
+                **Step 1: Daily Allowance Added (Automatic)**
+                ```python
+                wallet_plus_limit = wallet_start + daily_limit
+                # ${current_day.wallet_balance_start:.2f} + ${daily_limit:.2f} = ${wallet_plus_limit:.2f}
+                ```
+                
+                **Step 2: Capacity Enforcement (Critical!)**
+                ```python
+                available_capacity = min(wallet_plus_limit, max_capacity)
+                # min(${wallet_plus_limit:.2f}, ${current_day.wallet_max_capacity:.2f}) = ${min(wallet_plus_limit, current_day.wallet_max_capacity):.2f}
+                ```
+                {"⚠️ **Capacity cap applied!** " + f"${wallet_plus_limit - current_day.wallet_max_capacity:.2f} lost due to cap." if wallet_plus_limit > current_day.wallet_max_capacity else "✅ **Under capacity** - no funds lost to cap."}
+                
+                **Step 3: Actual Spending Subtracted**  
+                ```python
+                wallet_end = available_capacity - actual_spending
+                # ${min(wallet_plus_limit, current_day.wallet_max_capacity):.2f} - ${sgm_spent:.2f} = ${current_day.wallet_balance_end:.2f}
+                ```
+                
+                **Step 4: "Unused Spend" = What's Left Over**
+                ```python
+                unused_amount = daily_limit - actual_spending
+                # ${daily_limit:.2f} - ${sgm_spent:.2f} = ${unused_today:.2f}
+                ```
+                
+                **💡 The Key Point:**
+                "Unused spend funding the wallet" happens through **the absence of spending**, not explicit addition.
+                Your daily allowance gets added whether you use it or not. What you don't spend naturally remains!
+                
+                **Complete Mathematical Reality:**
+                ```
+                Final Wallet = min(Previous Wallet + Daily Allowance, Capacity) - Actual Spending
+                            = min(${current_day.wallet_balance_start:.2f} + ${daily_limit:.2f}, ${current_day.wallet_max_capacity:.2f}) - ${sgm_spent:.2f}
+                            = ${min(wallet_plus_limit, current_day.wallet_max_capacity):.2f} - ${sgm_spent:.2f}
+                            = ${current_day.wallet_balance_end:.2f}
+                ```
+                
+                **🔧 Actual Code (sgm_simulator.py lines 339 & 352):**
+                ```python
+                base_sgm_capacity = min(wallet_start + daily_limit, max_wallet_capacity)
+                wallet_end = base_sgm_capacity - sgm_from_wallet
+                ```
+                """
+            )
 
         wallet_col1, wallet_col2 = st.columns(2)
 
@@ -1928,7 +1980,7 @@ if "--cli" not in sys.argv and len(sys.argv) <= 1:
             )
 
             # Show where each number comes from
-            with st.expander("🔍 Source of Each Number", expanded=False):
+            with st.expander("🔍 Source of Each Number + Code References", expanded=False):
                 st.markdown(
                     f"""
                 **Where these numbers come from:**
@@ -1956,6 +2008,11 @@ if "--cli" not in sys.argv and len(sys.argv) <= 1:
                 **Final Wallet (\\${final_wallet:.2f}):**
                 - Remaining balance for tomorrow
                 - Will be "Previous Wallet Balance" for next day
+                
+                **🔧 Code References (sgm_simulator.py):**
+                - **Line 339:** `base_sgm_capacity = min(wallet_start + daily_limit, max_wallet_capacity)`
+                - **Line 352:** `wallet_end = base_sgm_capacity - sgm_from_wallet`
+                - **No explicit "add unused spend" code** - it's what remains after subtraction!
                 """
                 )
 

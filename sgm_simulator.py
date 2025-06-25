@@ -1671,7 +1671,7 @@ if "--cli" not in sys.argv and len(sys.argv) <= 1:
 
         # Daily Limit calculation - prominent display
         st.subheader("🧮 Daily Limit Calculation")
-        
+
         # Clear explanation of rolling window vs calendar weeks
         st.warning(
             """
@@ -1684,11 +1684,11 @@ if "--cli" not in sys.argv and len(sys.argv) <= 1:
             • **Continuous protection**: No "week boundary" loopholes - growth is controlled every single day!
             """.format(
                 current_day.day_index + 1,
-                max(1, current_day.day_index + 1 - 6), 
+                max(1, current_day.day_index + 1 - 6),
                 current_day.day_index + 1,
                 current_day.day_index + 2,
                 max(1, current_day.day_index + 2 - 6),
-                current_day.day_index + 2
+                current_day.day_index + 2,
             )
         )
 
@@ -1749,8 +1749,10 @@ if "--cli" not in sys.argv and len(sys.argv) <= 1:
                 3. **Growth factor:** (1 + {growth_pct}%/100)^(1/7) = {growth_factor:.4f}
                 
                 **Two Growth Options:**
-                - **Exponential:** \\${recent_7:.2f} × {growth_factor:.4f} - \\${recent_6:.2f} = \\${exponential_growth:.2f}
-                - **Linear:** \\${recent_7:.2f} + \\${min_dollars/7:.2f} - \\${recent_6:.2f} = \\${linear_growth:.2f}
+                - **Exponential:**  Recent 7 days total x Growth factor - Recent 6 days total
+                                    = \\${recent_7:.2f} × {growth_factor:.4f} - \\${recent_6:.2f} = \\${exponential_growth:.2f}
+                - **Linear:** Recent 7 days total + Min Growth / 7 - Recent 6 days total
+                                    = \\${recent_7:.2f} + \\${min_dollars/7:.2f} - \\${recent_6:.2f} = \\${linear_growth:.2f}
                 
                 **Final Result:**
                 ```
@@ -1763,10 +1765,11 @@ if "--cli" not in sys.argv and len(sys.argv) <= 1:
         # Show spending history that influenced this calculation
         if current_day.day_index >= 7:
             with st.expander(
-                f"📊 Rolling 7-Day Window: Days {max(1, current_day.day_index + 1 - 6)} to {current_day.day_index + 1}", expanded=False
+                f"📊 Rolling 7-Day Window: Days {max(1, current_day.day_index + 1 - 6)} to {current_day.day_index + 1}",
+                expanded=False,
             ):
                 st.markdown("**🔄 How the Rolling Window Works:**")
-                
+
                 # Visual representation of rolling window
                 st.markdown(
                     f"""
@@ -1785,7 +1788,7 @@ if "--cli" not in sys.argv and len(sys.argv) <= 1:
                     **📌 Key Point:** The window "slides" every day - it's NOT calendar weeks!
                     """
                 )
-                
+
                 history_data = []
                 for i in range(7):
                     day_num = current_day.day_index - 6 + i
@@ -1793,13 +1796,17 @@ if "--cli" not in sys.argv and len(sys.argv) <= 1:
                         st.session_state.accepted_history
                     ):
                         spend = st.session_state.accepted_history[day_num]
-                        is_newest = (i == 6)  # Last day in the window
+                        is_newest = i == 6  # Last day in the window
                         history_data.append(
                             {
                                 "Day": f"Day {day_num + 1}",
                                 "Spending": f"${spend:.2f}",
                                 "Used in": "Recent 7" if i < 7 else "",
-                                "Role": "🆕 Newest (Recent 7 - Recent 6)" if is_newest else "Recent 6",
+                                "Role": (
+                                    "🆕 Newest (Recent 7 - Recent 6)"
+                                    if is_newest
+                                    else "Recent 6"
+                                ),
                             }
                         )
 

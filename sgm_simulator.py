@@ -613,35 +613,38 @@ if "--cli" not in sys.argv and len(sys.argv) <= 1:
         **SGM (Spend Growth Management)** rules control how much your daily spending limit can grow over time.
         
         **Key Concepts:**
-        - **Growth Percentage**: How much your spending can increase per week (as a %)
-        - **Minimum Growth**: The minimum dollar amount your spending can increase per week
+        - **Growth Percentage**: How much your spending can increase per "week" (as a %)
+        - **Minimum Growth**: The minimum dollar amount your spending can increase per "week"
         - **Daily Limit**: How much you can spend each day (calculated by the SGM algorithm)
+        
+        **⚠️ IMPORTANT:** "Weekly" means any rolling 7-day period, NOT calendar weeks!
+        The algorithm looks at the last 7 days continuously - there are no "week boundary" loopholes.
         """
         )
 
     rule_name = st.sidebar.text_input("Rule Name", value="Default Rule")
 
     growth_pct = st.sidebar.slider(
-        "Growth % (per week)",
+        "Growth % (per rolling 7 days)",
         5.0,
         50.0,
         20.0,
         1.0,
-        help="Maximum percentage your weekly spending can grow. 20% means if you spent \\$100 last week, you can spend up to \\$120 this week.",
+        help="Maximum percentage your spending can grow over any 7-day rolling period. 20% means if you spent \\$100 in the last 7 days, you can spend up to \\$120 in the next 7 days.",
     )
 
     min_dollars = st.sidebar.number_input(
-        "Min Growth ($/week)",
+        "Min Growth ($/rolling 7 days)",
         20.0,
         100.0,
         20.0,
         5.0,
-        help="Minimum dollar amount your weekly spending can increase, regardless of percentage. Ensures meaningful growth even for small amounts.",
+        help="Minimum dollar amount your spending can increase over any 7-day rolling period, regardless of percentage. Ensures meaningful growth even for small amounts.",
     )
 
     # Show current rule formula
     st.sidebar.info(
-        f"**Current Rule:** {growth_pct}% per week OR ${min_dollars} per week (whichever is higher)"
+        f"**Current Rule:** {growth_pct}% per rolling 7 days OR ${min_dollars} per rolling 7 days (whichever is higher)"
     )
 
     rule = SGMRule(rule_name, growth_pct, min_dollars)
@@ -1668,6 +1671,26 @@ if "--cli" not in sys.argv and len(sys.argv) <= 1:
 
         # Daily Limit calculation - prominent display
         st.subheader("🧮 Daily Limit Calculation")
+        
+        # Clear explanation of rolling window vs calendar weeks
+        st.warning(
+            """
+            **⚠️ IMPORTANT: "Weekly" Growth = Rolling 7-Day Window**
+            
+            SGM doesn't use calendar weeks (Mon-Sun). Instead, it uses a **rolling 7-day window** that updates every day:
+            
+            • **Today (Day {})**: Looks at spending from Days {} to {}
+            • **Tomorrow (Day {})**: Will look at spending from Days {} to {}
+            • **Continuous protection**: No "week boundary" loopholes - growth is controlled every single day!
+            """.format(
+                current_day.day_index + 1,
+                max(1, current_day.day_index + 1 - 6), 
+                current_day.day_index + 1,
+                current_day.day_index + 2,
+                max(1, current_day.day_index + 2 - 6),
+                current_day.day_index + 2
+            )
+        )
 
         # Make the daily limit very prominent
         limit_col1, limit_col2 = st.columns([1, 2])
@@ -1714,7 +1737,10 @@ if "--cli" not in sys.argv and len(sys.argv) <= 1:
 
                 st.success(
                     f"""
-                **🎯 PRFAQ Algorithm Active (Day {current_day.day_index + 1})**
+                **🎯 PRFAQ Rolling 7-Day Window Algorithm (Day {current_day.day_index + 1})**
+                
+                **📊 Rolling Window (Days {max(1, current_day.day_index + 1 - 6)} to {current_day.day_index + 1}):**
+                The algorithm looks at the last 7 days of spending, NOT calendar weeks!
                 
                 **Step-by-Step Calculation:**
                 
@@ -1737,8 +1763,29 @@ if "--cli" not in sys.argv and len(sys.argv) <= 1:
         # Show spending history that influenced this calculation
         if current_day.day_index >= 7:
             with st.expander(
-                "📊 View Recent Spending History Used in Calculation", expanded=False
+                f"📊 Rolling 7-Day Window: Days {max(1, current_day.day_index + 1 - 6)} to {current_day.day_index + 1}", expanded=False
             ):
+                st.markdown("**🔄 How the Rolling Window Works:**")
+                
+                # Visual representation of rolling window
+                st.markdown(
+                    f"""
+                    **Current Window (Day {current_day.day_index + 1}):**
+                    ```
+                    Days: [{max(1, current_day.day_index + 1 - 6)} {max(1, current_day.day_index + 1 - 5)} {max(1, current_day.day_index + 1 - 4)} {max(1, current_day.day_index + 1 - 3)} {max(1, current_day.day_index + 1 - 2)} {max(1, current_day.day_index + 1 - 1)} {current_day.day_index + 1}]
+                          [------------ 7-day window -----------]
+                    ```
+                    
+                    **Tomorrow's Window (Day {current_day.day_index + 2}):**
+                    ```
+                    Days: [{max(1, current_day.day_index + 2 - 6)} {max(1, current_day.day_index + 2 - 5)} {max(1, current_day.day_index + 2 - 4)} {max(1, current_day.day_index + 2 - 3)} {max(1, current_day.day_index + 2 - 2)} {max(1, current_day.day_index + 2 - 1)} {current_day.day_index + 2}]
+                          [------------ 7-day window -----------]
+                    ```
+                    
+                    **📌 Key Point:** The window "slides" every day - it's NOT calendar weeks!
+                    """
+                )
+                
                 history_data = []
                 for i in range(7):
                     day_num = current_day.day_index - 6 + i
@@ -1746,19 +1793,24 @@ if "--cli" not in sys.argv and len(sys.argv) <= 1:
                         st.session_state.accepted_history
                     ):
                         spend = st.session_state.accepted_history[day_num]
+                        is_newest = (i == 6)  # Last day in the window
                         history_data.append(
                             {
                                 "Day": f"Day {day_num + 1}",
                                 "Spending": f"${spend:.2f}",
                                 "Used in": "Recent 7" if i < 7 else "",
-                                "Also in": "Recent 6" if i < 6 else "",
+                                "Role": "🆕 Newest (Recent 7 - Recent 6)" if is_newest else "Recent 6",
                             }
                         )
 
                 if history_data:
                     st.table(history_data)
-                    st.caption(
-                        "💡 The PRFAQ algorithm uses the last 7 days total minus the last 6 days to focus growth on the newest day's pattern."
+                    st.info(
+                        """
+                        **💡 Algorithm Insight:** 
+                        `recent_7 * growth_factor - recent_6` effectively isolates the contribution of the newest day.
+                        This ensures growth is controlled based on the most recent spending pattern, not old data!
+                        """
                     )
 
         # Wallet mechanics explanation

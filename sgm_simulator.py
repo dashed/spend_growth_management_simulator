@@ -1060,19 +1060,19 @@ if "--cli" not in sys.argv and len(sys.argv) <= 1:
         """Get data for the current (incomplete) billing cycle"""
         if not reserved or not st.session_state.simulation_days:
             return {
-                'days': [],
-                'accumulated_sgm': 0.0,
-                'accumulated_reserved': 0.0,
-                'accumulated_accepted': 0.0,
-                'accumulated_rejected': 0.0,
-                'days_in_cycle': 0,
-                'cycle_start_day': 0
+                "days": [],
+                "accumulated_sgm": 0.0,
+                "accumulated_reserved": 0.0,
+                "accumulated_accepted": 0.0,
+                "accumulated_rejected": 0.0,
+                "days_in_cycle": 0,
+                "cycle_start_day": 0,
             }
-        
+
         # Find the start of current billing cycle
         cycle_length = reserved.days_in_cycle
         current_day = len(st.session_state.simulation_days)
-        
+
         # Find when the current cycle started (last time billing_day was 1)
         cycle_start_day = 0
         for i in range(len(st.session_state.simulation_days) - 1, -1, -1):
@@ -1080,14 +1080,14 @@ if "--cli" not in sys.argv and len(sys.argv) <= 1:
             if day_result.billing_day == 1:
                 cycle_start_day = i
                 break
-        
+
         # Collect days from current cycle
         current_cycle_days = []
         accumulated_sgm = 0.0
         accumulated_reserved = 0.0
         accumulated_accepted = 0.0
         accumulated_rejected = 0.0
-        
+
         for i in range(cycle_start_day, len(st.session_state.simulation_days)):
             day_result = st.session_state.simulation_days[i]
             current_cycle_days.append(day_result)
@@ -1095,7 +1095,7 @@ if "--cli" not in sys.argv and len(sys.argv) <= 1:
             accumulated_reserved += day_result.reserved_spend
             accumulated_accepted += day_result.accepted_spend
             accumulated_rejected += day_result.rejected_spend
-        
+
         # Calculate forecasting data
         forecast_data = {}
         if len(current_cycle_days) >= 2:  # Need at least 2 days for trend analysis
@@ -1103,50 +1103,50 @@ if "--cli" not in sys.argv and len(sys.argv) <= 1:
             avg_daily_sgm = accumulated_sgm / len(current_cycle_days)
             avg_daily_reserved = accumulated_reserved / len(current_cycle_days)
             avg_daily_accepted = accumulated_accepted / len(current_cycle_days)
-            
+
             # Calculate remaining days in cycle
             current_billing_day = st.session_state.billing_day
             days_remaining = reserved.days_in_cycle - current_billing_day
-            
+
             # Forecast remaining spending
             forecast_sgm = avg_daily_sgm * days_remaining
             forecast_reserved = avg_daily_reserved * days_remaining
             forecast_accepted = avg_daily_accepted * days_remaining
-            
+
             # Total projected spending for full cycle
             projected_total_sgm = accumulated_sgm + forecast_sgm
             projected_total_reserved = accumulated_reserved + forecast_reserved
             projected_total_accepted = accumulated_accepted + forecast_accepted
-            
+
             # Projected invoice amount
             projected_invoice = reserved.monthly_volume + projected_total_sgm
-            
+
             forecast_data = {
-                'avg_daily_sgm': avg_daily_sgm,
-                'avg_daily_reserved': avg_daily_reserved,
-                'avg_daily_accepted': avg_daily_accepted,
-                'days_remaining': days_remaining,
-                'forecast_sgm': forecast_sgm,
-                'forecast_reserved': forecast_reserved,
-                'forecast_accepted': forecast_accepted,
-                'projected_total_sgm': projected_total_sgm,
-                'projected_total_reserved': projected_total_reserved,
-                'projected_total_accepted': projected_total_accepted,
-                'projected_invoice': projected_invoice,
-                'has_forecast': True
+                "avg_daily_sgm": avg_daily_sgm,
+                "avg_daily_reserved": avg_daily_reserved,
+                "avg_daily_accepted": avg_daily_accepted,
+                "days_remaining": days_remaining,
+                "forecast_sgm": forecast_sgm,
+                "forecast_reserved": forecast_reserved,
+                "forecast_accepted": forecast_accepted,
+                "projected_total_sgm": projected_total_sgm,
+                "projected_total_reserved": projected_total_reserved,
+                "projected_total_accepted": projected_total_accepted,
+                "projected_invoice": projected_invoice,
+                "has_forecast": True,
             }
         else:
-            forecast_data = {'has_forecast': False}
+            forecast_data = {"has_forecast": False}
 
         return {
-            'days': current_cycle_days,
-            'accumulated_sgm': accumulated_sgm,
-            'accumulated_reserved': accumulated_reserved,
-            'accumulated_accepted': accumulated_accepted,
-            'accumulated_rejected': accumulated_rejected,
-            'days_in_cycle': len(current_cycle_days),
-            'cycle_start_day': cycle_start_day,
-            'forecast': forecast_data
+            "days": current_cycle_days,
+            "accumulated_sgm": accumulated_sgm,
+            "accumulated_reserved": accumulated_reserved,
+            "accumulated_accepted": accumulated_accepted,
+            "accumulated_rejected": accumulated_rejected,
+            "days_in_cycle": len(current_cycle_days),
+            "cycle_start_day": cycle_start_day,
+            "forecast": forecast_data,
         }
 
     def simulate_next_day(auto_advance=False):
@@ -1214,18 +1214,20 @@ if "--cli" not in sys.argv and len(sys.argv) <= 1:
             # Check if undoing this day should also remove an invoice
             last_day = st.session_state.simulation_days[-1]
             should_remove_invoice = False
-            
+
             # If this day caused a billing cycle reset, we need to remove the latest invoice
-            if hasattr(st.session_state, 'invoices') and st.session_state.invoices:
+            if hasattr(st.session_state, "invoices") and st.session_state.invoices:
                 latest_invoice = st.session_state.invoices[-1]
                 # Check if the latest invoice was generated on this day
-                if latest_invoice.generated_on_day == len(st.session_state.simulation_days):
+                if latest_invoice.generated_on_day == len(
+                    st.session_state.simulation_days
+                ):
                     should_remove_invoice = True
-            
+
             # Remove last day
             st.session_state.simulation_days.pop()
             st.session_state.accepted_history.pop()
-            
+
             # Remove invoice if it was generated by this day
             if should_remove_invoice:
                 st.session_state.invoices.pop()
@@ -1272,7 +1274,10 @@ if "--cli" not in sys.argv and len(sys.argv) <= 1:
                 )
                 if st.session_state.billing_day == 1:
                     # Generate invoice for completed billing cycle before resetting
-                    if hasattr(st.session_state, 'invoices') and len(st.session_state.simulation_days) > 0:
+                    if (
+                        hasattr(st.session_state, "invoices")
+                        and len(st.session_state.simulation_days) > 0
+                    ):
                         generate_invoice_for_completed_cycle(day_index)
                     st.session_state.cumulative_reserved = 0.0
 
@@ -1332,7 +1337,10 @@ if "--cli" not in sys.argv and len(sys.argv) <= 1:
                 )
                 if st.session_state.billing_day == 1:
                     # Generate invoice for completed billing cycle before resetting
-                    if hasattr(st.session_state, 'invoices') and len(st.session_state.simulation_days) > 0:
+                    if (
+                        hasattr(st.session_state, "invoices")
+                        and len(st.session_state.simulation_days) > 0
+                    ):
                         generate_invoice_for_completed_cycle(day_index)
                     st.session_state.cumulative_reserved = 0.0
 
@@ -1370,24 +1378,34 @@ if "--cli" not in sys.argv and len(sys.argv) <= 1:
 
     # Unified Controls Section
     st.markdown("**🎮 Controls**")
-    
+
     if st.session_state.simulation_days:
         # Navigation controls in a tight row
         nav_col1, nav_col2, nav_col3, nav_col4, nav_col5 = st.columns([1, 1, 3, 1, 1])
-        
+
         with nav_col1:
-            if st.button("⏮️ Back 7 Days", help="Jump back 7 days", use_container_width=True, key="nav_back_week"):
+            if st.button(
+                "⏮️ Back 7 Days",
+                help="Jump back 7 days",
+                use_container_width=True,
+                key="nav_back_week",
+            ):
                 new_index = max(0, st.session_state.current_day_index - 7)
                 if new_index != st.session_state.current_day_index:
                     st.session_state.current_day_index = new_index
                     st.rerun()
-        
+
         with nav_col2:
-            if st.button("⬅️ Previous Day", help="Go to previous day", use_container_width=True, key="nav_back_day"):
+            if st.button(
+                "⬅️ Previous Day",
+                help="Go to previous day",
+                use_container_width=True,
+                key="nav_back_day",
+            ):
                 if st.session_state.current_day_index > 0:
                     st.session_state.current_day_index -= 1
                     st.rerun()
-        
+
         with nav_col3:
             if len(st.session_state.simulation_days) > 1:
                 day_to_show = st.selectbox(
@@ -1395,57 +1413,88 @@ if "--cli" not in sys.argv and len(sys.argv) <= 1:
                     range(len(st.session_state.simulation_days)),
                     index=st.session_state.current_day_index,
                     format_func=lambda x: f"Day {x + 1}",
-                    key="unified_day_selector"
+                    key="unified_day_selector",
                 )
                 if day_to_show != st.session_state.current_day_index:
                     st.session_state.current_day_index = day_to_show
                     st.rerun()
             else:
                 st.info("📍 Day 1 of 1")
-        
+
         with nav_col4:
-            if st.button("Next Day ➡️", help="Go to next day", use_container_width=True, key="nav_forward_day"):
+            if st.button(
+                "Next Day ➡️",
+                help="Go to next day",
+                use_container_width=True,
+                key="nav_forward_day",
+            ):
                 max_index = len(st.session_state.simulation_days) - 1
                 if st.session_state.current_day_index < max_index:
                     st.session_state.current_day_index += 1
                     st.rerun()
-        
+
         with nav_col5:
-            if st.button("Forward 7 Days ⏭️", help="Jump forward 7 days", use_container_width=True, key="nav_forward_week"):
+            if st.button(
+                "Forward 7 Days ⏭️",
+                help="Jump forward 7 days",
+                use_container_width=True,
+                key="nav_forward_week",
+            ):
                 max_index = len(st.session_state.simulation_days) - 1
                 new_index = min(max_index, st.session_state.current_day_index + 7)
                 if new_index != st.session_state.current_day_index:
                     st.session_state.current_day_index = new_index
                     st.rerun()
-    
+
     # Simulation controls in a tight row
     sim_col1, sim_col2, sim_col3, sim_col4, sim_col5 = st.columns(5)
-    
+
     with sim_col1:
-        if st.button("➕ Add Day", type="primary", help=f"Simulate 1 day (${daily_spend:.2f})", use_container_width=True, key="sim_day"):
+        if st.button(
+            "➕ Add Day",
+            type="primary",
+            help=f"Simulate 1 day (${daily_spend:.2f})",
+            use_container_width=True,
+            key="sim_day",
+        ):
             simulate_next_day()
-    
+
     with sim_col2:
-        if st.button("📅 Add Week", help=f"Simulate 7 days (${daily_spend:.2f}/day)", use_container_width=True, key="sim_week"):
+        if st.button(
+            "📅 Add Week",
+            help=f"Simulate 7 days (${daily_spend:.2f}/day)",
+            use_container_width=True,
+            key="sim_week",
+        ):
             simulate_next_week()
-    
+
     with sim_col3:
-        if st.button("🗓️ Add Month", help=f"Simulate 30 days (${daily_spend:.2f}/day)", use_container_width=True, key="sim_month"):
+        if st.button(
+            "🗓️ Add Month",
+            help=f"Simulate 30 days (${daily_spend:.2f}/day)",
+            use_container_width=True,
+            key="sim_month",
+        ):
             simulate_next_month()
-    
+
     with sim_col4:
-        if st.button("⏪ Undo", help="Undo last day", use_container_width=True, key="sim_undo"):
+        if st.button(
+            "⏪ Undo", help="Undo last day", use_container_width=True, key="sim_undo"
+        ):
             undo_last_day()
-    
+
     with sim_col5:
-        if st.button("🔄 Reset", help="Reset simulation", use_container_width=True, key="sim_reset"):
+        if st.button(
+            "🔄 Reset",
+            help="Reset simulation",
+            use_container_width=True,
+            key="sim_reset",
+        ):
             st.session_state.simulation_days = []
             st.session_state.current_day_index = -1
             st.session_state.wallet_balance = 0.0
             st.session_state.accepted_history = []
-            st.session_state.billing_day = (
-                reserved.billing_day_start if reserved else 1
-            )
+            st.session_state.billing_day = reserved.billing_day_start if reserved else 1
             st.session_state.cumulative_reserved = 0.0
             st.session_state.invoices = []
             st.rerun()
@@ -1714,6 +1763,55 @@ if "--cli" not in sys.argv and len(sys.argv) <= 1:
 
         # Wallet mechanics explanation
         st.subheader("💼 Wallet Mechanics")
+
+        # Calculate current day values for the summary
+        daily_limit = current_day.daily_spend_limit
+        sgm_spent = current_day.sgm_spend
+        unused_today = daily_limit - sgm_spent if sgm_spent < daily_limit else 0
+
+        # Quick summary box
+        summary_col1, summary_col2, summary_col3 = st.columns(3)
+        with summary_col1:
+            st.metric(
+                "Daily Allowance",
+                f"${daily_limit:.2f}",
+                help="Your spending allowance for today (gets added to wallet automatically)",
+            )
+        with summary_col2:
+            st.metric(
+                "Actually Spent",
+                f"${sgm_spent:.2f}",
+                help="How much you actually spent from SGM wallet today",
+            )
+        with summary_col3:
+            if unused_today > 0:
+                st.metric(
+                    "Saved for Later",
+                    f"${unused_today:.2f}",
+                    delta=f"+{unused_today:.2f}",
+                    help="Unused allowance that stays in your wallet",
+                )
+            else:
+                overspend = sgm_spent - daily_limit
+                st.metric(
+                    "Used from Savings",
+                    f"${overspend:.2f}",
+                    delta=f"-{overspend:.2f}",
+                    help="Amount taken from your saved wallet balance",
+                )
+
+        # Key insight about unused spend
+        st.info(
+            f"""
+            **🔑 KEY INSIGHT: How "Unused Spend" Funds the Wallet**
+            
+            Every day, your **daily allowance (\\${daily_limit:.2f})** gets added to your wallet automatically.
+            {"Today you saved " + f"\\${unused_today:.2f}" + " by spending less than your allowance!" if unused_today > 0 else "Today you used " + f"\\${sgm_spent - daily_limit:.2f}" + " from your saved balance."}
+            
+            **It's like a daily allowance that accumulates when you don't spend it all!**
+            """
+        )
+
         wallet_col1, wallet_col2 = st.columns(2)
 
         with wallet_col1:
@@ -1728,6 +1826,9 @@ if "--cli" not in sys.argv and len(sys.argv) <= 1:
             sgm_spent = current_day.sgm_spend
             final_wallet = current_day.wallet_balance_end
 
+            # Calculate unused spend for clarity
+            unused_spend = daily_limit - sgm_spent if sgm_spent < daily_limit else 0
+
             st.markdown(
                 f"""
             **Step-by-Step Wallet Calculation:**
@@ -1739,30 +1840,31 @@ if "--cli" not in sys.argv and len(sys.argv) <= 1:
             Wallet Capacity = ${max_capacity:.2f}
             ```
             
-            **2. Daily Limit Addition:**
+            **2. Daily Allowance Addition (Automatic):**
             ```
-            Wallet + Daily Limit = ${prev_wallet:.2f} + ${daily_limit:.2f} = ${wallet_plus_limit:.2f}
+            Available = Wallet + Daily Limit = ${prev_wallet:.2f} + ${daily_limit:.2f} = ${wallet_plus_limit:.2f}
+            (Your daily spending allowance gets added automatically)
             ```
             
             **3. Capacity Enforcement:**
             ```
-            Available = min(Wallet + Limit, Capacity)
-            Available = min(${wallet_plus_limit:.2f}, ${max_capacity:.2f}) = ${available_capacity:.2f}
+            Available (capped) = min(${wallet_plus_limit:.2f}, ${max_capacity:.2f}) = ${available_capacity:.2f}
             ```
             
-            **4. Spending Deduction:**
+            **4. Actual Spending:**
             ```
             SGM Spending = ${sgm_spent:.2f}
+            Daily Limit  = ${daily_limit:.2f}
+            {"✅ Unused Amount = " + f"${unused_spend:.2f}" if unused_spend > 0 else "❌ Over-spent by = " + f"${sgm_spent - daily_limit:.2f}"}
+            ```
+            
+            **5. Final Wallet Balance:**
+            ```
             Final Wallet = Available - SGM Spending
             Final Wallet = ${available_capacity:.2f} - ${sgm_spent:.2f} = ${final_wallet:.2f}
             ```
             
-            **📋 Formula Summary:**
-            ```
-            Final Wallet = min(Previous Wallet + Daily Limit, Capacity) - SGM Spend
-                        = min(${prev_wallet:.2f} + ${daily_limit:.2f}, ${max_capacity:.2f}) - ${sgm_spent:.2f}
-                        = ${final_wallet:.2f}
-            ```
+            **💡 Key Point:** {"You saved " + f"${unused_spend:.2f}" + " for future use!" if unused_spend > 0 else "You used " + f"${sgm_spent - daily_limit:.2f}" + " from your saved balance."}
             """
             )
 
@@ -1820,6 +1922,33 @@ if "--cli" not in sys.argv and len(sys.argv) <= 1:
                 )
 
         with wallet_col2:
+            st.markdown("**🧠 Conceptual Understanding:**")
+
+            # Simple analogy explanation
+            st.markdown(
+                f"""
+                **Think of the wallet like a daily allowance bank account:**
+                
+                🏦 **Every day you get an "allowance" of ${daily_limit:.2f}**
+                - This gets deposited automatically
+                - Whether you spend it or not
+                
+                💰 **What you don't spend stays in your account**
+                - Today's unused: ${unused_spend:.2f}
+                - This builds up your balance for busy days
+                
+                🧢 **But there's a maximum balance (capacity): ${max_capacity:.2f}**
+                - Prevents unlimited accumulation
+                - "Use it or lose it" beyond the cap
+                
+                📈 **Future spike protection:**
+                - If tomorrow you need ${daily_limit + 10:.2f}, you can use:
+                - Tomorrow's allowance: ${daily_limit:.2f}
+                - Plus saved balance: ${final_wallet:.2f}
+                - **Total available: ${daily_limit + final_wallet:.2f}**
+                """
+            )
+
             # Calculate wallet status metrics with detailed explanations
             current_balance = current_day.wallet_balance_end
             max_capacity = current_day.wallet_max_capacity
@@ -2563,92 +2692,127 @@ if "--cli" not in sys.argv and len(sys.argv) <= 1:
         if reserved and st.session_state.simulation_days:
             st.divider()
             st.subheader("🔄 Current Billing Cycle")
-            
+
             cycle_data = get_current_billing_cycle_data()
-            
+
             cycle_col1, cycle_col2 = st.columns(2)
-            
+
             with cycle_col1:
                 st.markdown("**📊 Cycle Summary**")
-                if cycle_data['days_in_cycle'] > 0:
+                if cycle_data["days_in_cycle"] > 0:
                     current_billing_day = st.session_state.billing_day
                     days_remaining = reserved.days_in_cycle - current_billing_day + 1
-                    
-                    st.write(f"• Current Billing Day: {current_billing_day}/{reserved.days_in_cycle}")
+
+                    st.write(
+                        f"• Current Billing Day: {current_billing_day}/{reserved.days_in_cycle}"
+                    )
                     st.write(f"• Days in Current Cycle: {cycle_data['days_in_cycle']}")
                     st.write(f"• Days Remaining: {days_remaining}")
                     st.write(f"• Cycle Start: Day {cycle_data['cycle_start_day'] + 1}")
-                    
+
                     # Progress bar for billing cycle
                     cycle_progress = current_billing_day / reserved.days_in_cycle
-                    st.progress(cycle_progress, f"Cycle Progress: {cycle_progress*100:.1f}%")
+                    st.progress(
+                        cycle_progress, f"Cycle Progress: {cycle_progress*100:.1f}%"
+                    )
                 else:
                     st.write("• No billing cycle data yet")
-            
+
             with cycle_col2:
                 st.markdown("**💸 Accumulated Usage**")
-                if cycle_data['days_in_cycle'] > 0:
+                if cycle_data["days_in_cycle"] > 0:
                     st.metric("SGM Spend", f"${cycle_data['accumulated_sgm']:.2f}")
-                    st.metric("Reserved Spend", f"${cycle_data['accumulated_reserved']:.2f}")
-                    st.metric("Total Accepted", f"${cycle_data['accumulated_accepted']:.2f}")
-                    st.metric("Total Rejected", f"${cycle_data['accumulated_rejected']:.2f}")
+                    st.metric(
+                        "Reserved Spend", f"${cycle_data['accumulated_reserved']:.2f}"
+                    )
+                    st.metric(
+                        "Total Accepted", f"${cycle_data['accumulated_accepted']:.2f}"
+                    )
+                    st.metric(
+                        "Total Rejected", f"${cycle_data['accumulated_rejected']:.2f}"
+                    )
                 else:
                     st.write("• No usage data yet")
 
             # Forecast section
-            if cycle_data['days_in_cycle'] > 0 and cycle_data['forecast']['has_forecast']:
+            if (
+                cycle_data["days_in_cycle"] > 0
+                and cycle_data["forecast"]["has_forecast"]
+            ):
                 st.divider()
                 forecast_col1, forecast_col2, forecast_col3 = st.columns(3)
-                
+
                 with forecast_col1:
                     st.markdown("**📊 Daily Averages**")
-                    st.write(f"• Avg SGM/day: ${cycle_data['forecast']['avg_daily_sgm']:.2f}")
-                    st.write(f"• Avg Reserved/day: ${cycle_data['forecast']['avg_daily_reserved']:.2f}")
-                    st.write(f"• Avg Total/day: ${cycle_data['forecast']['avg_daily_accepted']:.2f}")
-                    
+                    st.write(
+                        f"• Avg SGM/day: ${cycle_data['forecast']['avg_daily_sgm']:.2f}"
+                    )
+                    st.write(
+                        f"• Avg Reserved/day: ${cycle_data['forecast']['avg_daily_reserved']:.2f}"
+                    )
+                    st.write(
+                        f"• Avg Total/day: ${cycle_data['forecast']['avg_daily_accepted']:.2f}"
+                    )
+
                 with forecast_col2:
                     st.markdown("**🔮 Remaining Forecast**")
                     st.write(f"• Days left: {cycle_data['forecast']['days_remaining']}")
-                    st.write(f"• Forecast SGM: ${cycle_data['forecast']['forecast_sgm']:.2f}")
-                    st.write(f"• Forecast Reserved: ${cycle_data['forecast']['forecast_reserved']:.2f}")
-                    
+                    st.write(
+                        f"• Forecast SGM: ${cycle_data['forecast']['forecast_sgm']:.2f}"
+                    )
+                    st.write(
+                        f"• Forecast Reserved: ${cycle_data['forecast']['forecast_reserved']:.2f}"
+                    )
+
                 with forecast_col3:
                     st.markdown("**🎯 Projected Totals**")
-                    st.write(f"• Total SGM: ${cycle_data['forecast']['projected_total_sgm']:.2f}")
-                    st.write(f"• Total Reserved: ${cycle_data['forecast']['projected_total_reserved']:.2f}")
-                    
+                    st.write(
+                        f"• Total SGM: ${cycle_data['forecast']['projected_total_sgm']:.2f}"
+                    )
+                    st.write(
+                        f"• Total Reserved: ${cycle_data['forecast']['projected_total_reserved']:.2f}"
+                    )
+
                     # Highlight projected invoice
-                    st.success(f"💰 **Projected Invoice: ${cycle_data['forecast']['projected_invoice']:.2f}**")
-                    
+                    st.success(
+                        f"💰 **Projected Invoice: ${cycle_data['forecast']['projected_invoice']:.2f}**"
+                    )
+
                     # Compare with current incomplete invoice
-                    current_incomplete = reserved.monthly_volume + cycle_data['accumulated_sgm']
-                    forecast_increase = cycle_data['forecast']['projected_invoice'] - current_incomplete
+                    current_incomplete = (
+                        reserved.monthly_volume + cycle_data["accumulated_sgm"]
+                    )
+                    forecast_increase = (
+                        cycle_data["forecast"]["projected_invoice"] - current_incomplete
+                    )
                     if forecast_increase > 0:
                         st.info(f"📈 Expected increase: +${forecast_increase:.2f}")
-            
-            elif cycle_data['days_in_cycle'] > 0:
+
+            elif cycle_data["days_in_cycle"] > 0:
                 # Show simple projection for first day
-                st.info(f"💡 **Current Invoice**: ${reserved.monthly_volume + cycle_data['accumulated_sgm']:.2f}")
+                st.info(
+                    f"💡 **Current Invoice**: ${reserved.monthly_volume + cycle_data['accumulated_sgm']:.2f}"
+                )
                 st.caption("📊 Forecast available after 2+ days of data")
 
             # Line chart for current billing cycle
-            if cycle_data['days_in_cycle'] >= 2 and PLOTLY_AVAILABLE:
+            if cycle_data["days_in_cycle"] >= 2 and PLOTLY_AVAILABLE:
                 st.markdown("**📈 Current Cycle Trends**")
-                
+
                 # Prepare data for charts
-                cycle_days = cycle_data['days']
+                cycle_days = cycle_data["days"]
                 billing_days = [day.billing_day for day in cycle_days]
                 cumulative_sgm = []
                 cumulative_reserved = []
                 cumulative_accepted = []
                 daily_sgm = [day.sgm_spend for day in cycle_days]
                 daily_reserved = [day.reserved_spend for day in cycle_days]
-                
+
                 # Calculate cumulative values
                 sgm_sum = 0
                 reserved_sum = 0
                 accepted_sum = 0
-                
+
                 for day in cycle_days:
                     sgm_sum += day.sgm_spend
                     reserved_sum += day.reserved_spend
@@ -2656,117 +2820,153 @@ if "--cli" not in sys.argv and len(sys.argv) <= 1:
                     cumulative_sgm.append(sgm_sum)
                     cumulative_reserved.append(reserved_sum)
                     cumulative_accepted.append(accepted_sum)
-                
+
                 chart_col1, chart_col2 = st.columns(2)
-                
+
                 with chart_col1:
                     # Cumulative spending chart with forecast
                     fig_cumulative = go.Figure()
-                    
+
                     # Historical data
-                    fig_cumulative.add_trace(go.Scatter(
-                        x=billing_days,
-                        y=cumulative_sgm,
-                        mode='lines+markers',
-                        name='Cumulative SGM',
-                        line=dict(color='orange', width=3)
-                    ))
-                    fig_cumulative.add_trace(go.Scatter(
-                        x=billing_days,
-                        y=cumulative_reserved,
-                        mode='lines+markers',
-                        name='Cumulative Reserved',
-                        line=dict(color='blue', width=2)
-                    ))
-                    fig_cumulative.add_trace(go.Scatter(
-                        x=billing_days,
-                        y=cumulative_accepted,
-                        mode='lines+markers',
-                        name='Cumulative Total',
-                        line=dict(color='green', width=2, dash='dash')
-                    ))
-                    
+                    fig_cumulative.add_trace(
+                        go.Scatter(
+                            x=billing_days,
+                            y=cumulative_sgm,
+                            mode="lines+markers",
+                            name="Cumulative SGM",
+                            line=dict(color="orange", width=3),
+                        )
+                    )
+                    fig_cumulative.add_trace(
+                        go.Scatter(
+                            x=billing_days,
+                            y=cumulative_reserved,
+                            mode="lines+markers",
+                            name="Cumulative Reserved",
+                            line=dict(color="blue", width=2),
+                        )
+                    )
+                    fig_cumulative.add_trace(
+                        go.Scatter(
+                            x=billing_days,
+                            y=cumulative_accepted,
+                            mode="lines+markers",
+                            name="Cumulative Total",
+                            line=dict(color="green", width=2, dash="dash"),
+                        )
+                    )
+
                     # Add forecast if available
-                    if cycle_data['forecast']['has_forecast'] and cycle_data['forecast']['days_remaining'] > 0:
+                    if (
+                        cycle_data["forecast"]["has_forecast"]
+                        and cycle_data["forecast"]["days_remaining"] > 0
+                    ):
                         # Create forecast points
                         last_billing_day = billing_days[-1]
-                        forecast_days = list(range(last_billing_day + 1, reserved.days_in_cycle + 1))
-                        
+                        forecast_days = list(
+                            range(last_billing_day + 1, reserved.days_in_cycle + 1)
+                        )
+
                         # Forecast cumulative values
                         last_sgm = cumulative_sgm[-1]
                         last_reserved = cumulative_reserved[-1]
                         last_accepted = cumulative_accepted[-1]
-                        
+
                         forecast_cumulative_sgm = []
                         forecast_cumulative_reserved = []
                         forecast_cumulative_accepted = []
-                        
+
                         for i, day in enumerate(forecast_days):
                             days_ahead = i + 1
-                            forecast_cumulative_sgm.append(last_sgm + (cycle_data['forecast']['avg_daily_sgm'] * days_ahead))
-                            forecast_cumulative_reserved.append(last_reserved + (cycle_data['forecast']['avg_daily_reserved'] * days_ahead))
-                            forecast_cumulative_accepted.append(last_accepted + (cycle_data['forecast']['avg_daily_accepted'] * days_ahead))
-                        
+                            forecast_cumulative_sgm.append(
+                                last_sgm
+                                + (cycle_data["forecast"]["avg_daily_sgm"] * days_ahead)
+                            )
+                            forecast_cumulative_reserved.append(
+                                last_reserved
+                                + (
+                                    cycle_data["forecast"]["avg_daily_reserved"]
+                                    * days_ahead
+                                )
+                            )
+                            forecast_cumulative_accepted.append(
+                                last_accepted
+                                + (
+                                    cycle_data["forecast"]["avg_daily_accepted"]
+                                    * days_ahead
+                                )
+                            )
+
                         # Add forecast lines
-                        fig_cumulative.add_trace(go.Scatter(
-                            x=[last_billing_day] + forecast_days,
-                            y=[last_sgm] + forecast_cumulative_sgm,
-                            mode='lines',
-                            name='Forecast SGM',
-                            line=dict(color='orange', width=2, dash='dot'),
-                            opacity=0.7
-                        ))
-                        fig_cumulative.add_trace(go.Scatter(
-                            x=[last_billing_day] + forecast_days,
-                            y=[last_reserved] + forecast_cumulative_reserved,
-                            mode='lines',
-                            name='Forecast Reserved',
-                            line=dict(color='blue', width=2, dash='dot'),
-                            opacity=0.7
-                        ))
-                        fig_cumulative.add_trace(go.Scatter(
-                            x=[last_billing_day] + forecast_days,
-                            y=[last_accepted] + forecast_cumulative_accepted,
-                            mode='lines',
-                            name='Forecast Total',
-                            line=dict(color='green', width=2, dash='dot'),
-                            opacity=0.7
-                        ))
-                    
+                        fig_cumulative.add_trace(
+                            go.Scatter(
+                                x=[last_billing_day] + forecast_days,
+                                y=[last_sgm] + forecast_cumulative_sgm,
+                                mode="lines",
+                                name="Forecast SGM",
+                                line=dict(color="orange", width=2, dash="dot"),
+                                opacity=0.7,
+                            )
+                        )
+                        fig_cumulative.add_trace(
+                            go.Scatter(
+                                x=[last_billing_day] + forecast_days,
+                                y=[last_reserved] + forecast_cumulative_reserved,
+                                mode="lines",
+                                name="Forecast Reserved",
+                                line=dict(color="blue", width=2, dash="dot"),
+                                opacity=0.7,
+                            )
+                        )
+                        fig_cumulative.add_trace(
+                            go.Scatter(
+                                x=[last_billing_day] + forecast_days,
+                                y=[last_accepted] + forecast_cumulative_accepted,
+                                mode="lines",
+                                name="Forecast Total",
+                                line=dict(color="green", width=2, dash="dot"),
+                                opacity=0.7,
+                            )
+                        )
+
                     fig_cumulative.update_layout(
                         title="Cumulative Spending - Current Cycle (with Forecast)",
                         xaxis_title="Billing Day",
                         yaxis_title="Amount ($)",
                         height=400,
-                        showlegend=True
+                        showlegend=True,
                     )
                     st.plotly_chart(fig_cumulative, use_container_width=True)
-                
+
                 with chart_col2:
                     # Daily spending chart
                     fig_daily = go.Figure()
-                    fig_daily.add_trace(go.Bar(
-                        x=billing_days,
-                        y=daily_sgm,
-                        name='Daily SGM',
-                        marker_color='orange',
-                        opacity=0.7
-                    ))
-                    fig_daily.add_trace(go.Bar(
-                        x=billing_days,
-                        y=daily_reserved,
-                        name='Daily Reserved',
-                        marker_color='blue',
-                        opacity=0.7
-                    ))
-                    
+                    fig_daily.add_trace(
+                        go.Bar(
+                            x=billing_days,
+                            y=daily_sgm,
+                            name="Daily SGM",
+                            marker_color="orange",
+                            opacity=0.7,
+                        )
+                    )
+                    fig_daily.add_trace(
+                        go.Bar(
+                            x=billing_days,
+                            y=daily_reserved,
+                            name="Daily Reserved",
+                            marker_color="blue",
+                            opacity=0.7,
+                        )
+                    )
+
                     fig_daily.update_layout(
                         title="Daily Spending - Current Cycle",
                         xaxis_title="Billing Day",
                         yaxis_title="Amount ($)",
                         height=400,
-                        barmode='stack',
-                        showlegend=True
+                        barmode="stack",
+                        showlegend=True,
                     )
                     st.plotly_chart(fig_daily, use_container_width=True)
 

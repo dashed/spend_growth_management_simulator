@@ -561,7 +561,8 @@ def run_cli():
             print(f"  - From Reserved: ${total_reserved:.2f}")
             print(f"  - From SGM: ${total_sgm:.2f}")
         print(f"Total Rejected: ${total_rejected:.2f}")
-        print(f"Acceptance Rate: {(total_accepted/total_requested)*100:.1f}%")
+        acceptance_rate = (total_accepted/total_requested)*100 if total_requested > 0 else 0
+        print(f"Acceptance Rate: {acceptance_rate:.1f}%")
         print(f"Intervention Days: {interventions}")
 
         # Show first week detail to demonstrate bootstrap fix
@@ -572,7 +573,8 @@ def run_cli():
         print(f"Week 1 Requested: ${week_requested:.2f}")
         print(f"Week 1 Accepted: ${week_accepted:.2f}")
         print(f"Week 1 SGM Accepted: ${week_sgm:.2f}")
-        print(f"Week 1 Acceptance Rate: {(week_accepted/week_requested)*100:.1f}%")
+        week_acceptance_rate = (week_accepted/week_requested)*100 if week_requested > 0 else 0
+        print(f"Week 1 Acceptance Rate: {week_acceptance_rate:.1f}%")
 
 
 # =============================================================================
@@ -2792,8 +2794,9 @@ if "--cli" not in sys.argv and len(sys.argv) <= 1:
                 week1_sgm = sum(d.sgm_spend for d in week1_days)
                 st.write(f"• Week 1 Requested: ${week1_requested:.2f}")
                 st.write(f"• Week 1 SGM Accepted: ${week1_sgm:.2f}")
+                week1_accept_rate = (week1_accepted/week1_requested)*100 if week1_requested > 0 else 0
                 st.write(
-                    f"• Week 1 Accept Rate: {(week1_accepted/week1_requested)*100:.1f}%"
+                    f"• Week 1 Accept Rate: {week1_accept_rate:.1f}%"
                 )
 
         with col2:

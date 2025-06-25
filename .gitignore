@@ -8,3 +8,6 @@ wheels/
 
 # Virtual environments
 .venv
+
+specs_inbox/
+specs_outbox/
